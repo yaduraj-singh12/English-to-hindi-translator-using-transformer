@@ -1,7 +1,44 @@
 import json
+import os
 import tensorflow as tf
+from datasets import load_dataset
 
-START, END = "startseq", "endseq"   # plain-ASCII markers (survive TextVectorization standardization)
+START, END = "startseq", "endseq"  # plain-ASCII markers (survive TextVectorization standardization)
+
+
+def prepare_iitb_dataset(subset_size=200000, output_dir="iitb_corpus"):
+    """Downloads a subset of the IIT Bombay dataset from Hugging Face, 
+    saves text files locally, and returns the file paths."""
+    os.makedirs(output_dir, exist_ok=True)
+    en_path = os.path.join(output_dir, "train.en")
+    hi_path = os.path.join(output_dir, "train.hi")
+    
+    if not os.path.exists(en_path) or not os.path.exists(hi_path):
+        print(f"Downloading {subset_size} sentence pairs from Hugging Face...")
+        dataset = load_dataset("cfilt/iitb-english-hindi", split=f"train[:{subset_size}]")
+        
+        print("Writing dataset subset to local text files...")
+        with open(en_path, "w", encoding="utf-8") as f_en, \
+             open(hi_path, "w", encoding="utf-8") as f_hi:
+            for item in dataset:
+                pair = item["translation"]
+                f_en.write(pair["en"].strip() + "\n")
+                f_hi.write(pair["hi"].strip() + "\n")
+        print("Dataset successfully prepared!")
+    else:
+        print("Local dataset files already found. Skipping download.")
+
+    return en_path, hi_path
+
+
+def load_texts(en_path, hi_path):
+    """Loads English and Hindi lines from text files into lists."""
+    print("Loading texts into memory...")
+    with open(en_path, "r", encoding="utf-8") as f:
+        eng_texts = [line.strip() for line in f if line.strip()]
+    with open(hi_path, "r", encoding="utf-8") as f:
+        hin_texts = [line.strip() for line in f if line.strip()]
+    return eng_texts, hin_texts
 
 
 def create_vectorizers(train_eng_texts, train_hin_texts, max_vocab_size=32000,
