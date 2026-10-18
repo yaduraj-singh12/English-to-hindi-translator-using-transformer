@@ -5,17 +5,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import tensorflow as tf
 from src.transformer import TransformerTranslationModel
-from src.dataset import create_vectorizers, make_dataset, save_vocab
+from src.dataset import create_vectorizers, make_dataset, save_vocab, prepare_iitb_dataset
 
 
 def load_real_data():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     data_dir = os.path.join(project_root, "iitb_corpus")
-    os.makedirs(data_dir, exist_ok=True)
+    
+    # Automatically download and slice the 200k subset if it doesn't exist yet
+    prepare_iitb_dataset(subset_size=200000, output_dir=data_dir)
+    
     en_file = os.path.join(data_dir, "train.en")
     hi_file = os.path.join(data_dir, "train.hi")
-    if not os.path.exists(en_file) or not os.path.exists(hi_file):
-        raise FileNotFoundError(f"Put train.en and train.hi in: {data_dir}")
 
     eng_texts, hin_texts = [], []
     with open(en_file, 'r', encoding='utf-8') as f_en, open(hi_file, 'r', encoding='utf-8') as f_hi:
